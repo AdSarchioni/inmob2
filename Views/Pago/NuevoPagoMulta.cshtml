@@ -1,0 +1,93 @@
+@model InmoviliariaSarchioniAlfonzo.Models.Pago
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Nuevo Pago";
+    var contrato = ViewData["contrato"] as Contrato;
+    var pagos = ViewData["pagos"] as List<InmoviliariaSarchioniAlfonzo.Models.Pago>;
+    var cuotasPagadas = pagos?.Select(p => p.CuotaPaga).ToHashSet() ?? new HashSet<int>();
+
+    // Calcular la cantidad de cuotas pagadas
+    int totalCuotas = contrato?.Meses ?? 0;
+    int cantidadPagadas = cuotasPagadas.Count;
+    double multa = 0;
+    double cuotapagar = contrato?.Monto ?? 0;
+    string tipoMulta = "";
+
+    // Calcular la multa
+    if (cantidadPagadas < totalCuotas / 2.0)
+    {
+        multa = 2 * cuotapagar;
+        tipoMulta = "Multa correspondiente a 2 cuotas.";
+    }
+    else
+    {
+        multa = cuotapagar;
+        tipoMulta = "Multa correspondiente a 1 cuota.";
+    }
+
+
+    double totalAPagar = cuotapagar + multa;
+}
+
+<link rel="stylesheet" href="~/fondo/pago.css" />
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <h2 class="text-center">@ViewData["Title"]</h2>
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger temp-message" role="alert">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <form asp-action="GuardarPagoAnulado" method="post">
+                <input type="hidden" asp-for="Id_Contrato" value="@contrato?.Id_Contrato" />
+                <input type="hidden" asp-for="Multa" value="@multa" />
+                <input type="hidden" asp-for="Id_Creado_Por" value="1" />
+                <input type="hidden" asp-for="Id_Terminado_Por" value="1" />
+                <input type="hidden" asp-for="Estado_Pago" value="1" />
+                <input type="hidden" asp-for="Importe" value="@contrato?.Monto" />
+
+                <div class="form-group">
+                    <label class="control-label">N° de Contrato</label>
+                    <input type="text" class="form-control" value="@contrato?.Id_Contrato" readonly />
+                </div>
+                <div class="form-group">
+                    <label class="control-label">Inquilino</label>
+                    <input type="text" class="form-control"
+                        value="@($"{contrato?.inquilino?.Apellido}, {contrato?.inquilino?.Nombre}")" readonly />
+                </div>
+                <div class="form-group">
+                    <label class="control-label">Monto</label>
+                    <input type="text" class="form-control" value="@($"${contrato?.Monto:N2}")" readonly />
+                </div>
+                <div class="form-group">
+                    <label class="control-label">Multa</label>
+                    <input type="text" class="form-control" value="@($"${multa:N2}")" readonly />
+                    <small class="text-danger">@tipoMulta</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Total a Pagar</label>
+                    <input type="text" class="form-control" value="@($"${totalAPagar:N2}")" readonly />
+                </div>
+                <div class="form-group">
+                    <label class="control-label">Fecha Actual</label>
+                    <input type="date" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" readonly />
+                    <input type="hidden" asp-for="Fecha" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary mt-3">Guardar Pago</button>
+                    <a asp-action="ListContVigentes" class="btn btn-secondary mt-3">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/site.js"></script>
